@@ -40,7 +40,6 @@ func init() {
 		{"APIC", "Attached picture"},
 		{"USLT", "Unsynchronised lyrics/text transcription"},
 		{"COMM", "Comments"},
-		// {"COMM/CN", "Comments: catalog number"}
 	}
 
 	var editCmd = &cobra.Command{
@@ -224,29 +223,6 @@ func init() {
 							Text:        commentary,
 						})
 					}
-				/* case "COMM/CN":
-				var frameText string
-				if frames := tag.GetFrames(v.frame); len(frames) > 0 {
-					idx := slices.IndexFunc(frames, func(e id3v2.Framer) bool {
-						return e.(id3v2.CommentFrame).Description == "Catalog Number"
-					})
-					if idx != -1 {
-						frameText = frames[idx].(id3v2.CommentFrame).Text
-					}
-				}
-				fmt.Printf(
-					"%v: type any text to change, or empty string to leave unchanged\n\tCurrent: %q\n",
-					v.String(),
-					frameText,
-				)
-				if catalogNumber, err := scanInputLine(scanner); err == nil {
-					tag.AddCommentFrame(id3v2.CommentFrame{
-						Encoding:    tag.DefaultEncoding(),
-						Language:    "eng",
-						Description: "Catalog Number",
-						Text:        catalogNumber,
-					})
-				} */
 				default:
 					fmt.Printf(editFrameMsg, v.String(), tag.GetTextFrame(v.frame).Text)
 					if input, err := scanInputLine(scanner); err == nil {
