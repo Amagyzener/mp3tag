@@ -10,7 +10,7 @@ mp3tag show path/to/file.mp3
 
 ### Edit MP3 tags (ID3v2.3 only)
 
-Edit all supported frames listed below.
+Edit all supported frames listed below (see [`edit` flags](#edit-flags)).
 
 ```bash
 mp3tag edit -a path/to/file.mp3
@@ -34,7 +34,7 @@ Edit the specified frames.
 mp3tag edit --tit2 --tpe1 path/to/file.mp3
 ```
 
-#### Flags
+#### `edit` flags
 
 - `--tit2` to edit `Title`.
 - `--tpe1` to edit `Artist`.
@@ -61,7 +61,7 @@ Reset all tags, both ID3v1 & ID3v2.
 mp3tag reset path/to/file.mp3
 ```
 
-#### Flags
+#### `reset` flags
 
 - `--v1` to reset ID3v1 tag only.
 - `--v2` to reset ID3v2 tag only.
@@ -69,8 +69,6 @@ mp3tag reset path/to/file.mp3
 ## TODO
 
 - `[~]` Fix UTF-16LE with BOM to UTF-8 decoding. (\*)
-- `[v]` Fix invalid "COMM" on ID3v1 tag reset.
 - `[~]` Fix incorrect re-edit (broken lyrics; due to UTF-16LE with BOM to UTF-8 decoding?). (\*)
-- `[?]` Add frame flags to `show` command (show the specified frames).
 
 \* _Turned off LE/BE detection entirely as a workaround (the program assumes UTF-16 to be LE with BOM only)._

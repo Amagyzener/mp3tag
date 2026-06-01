@@ -64,7 +64,6 @@ func init() {
 			tag.SetDefaultEncoding(id3v2.EncodingUTF16)
 
 			flags := cmd.Flags()
-			hasFlags := flags.NFlag() > 0
 			isAll, err := flags.GetBool("all")
 			if err != nil {
 				log.Fatal(err)
@@ -74,17 +73,13 @@ func init() {
 
 			if isAll {
 				// Edit all frames except the specified ones.
-				if hasFlags {
-					editFrames = filter(frames, func(_ int, r frameRecord) bool {
-						flagState, _ := flags.GetBool(strings.ToLower(r.frame))
-						return !flagState
-					})
-				} else {
-					editFrames = slices.All(frames)
-				}
+				editFrames = filter(frames, func(_ int, r frameRecord) bool {
+					flagState, _ := flags.GetBool(strings.ToLower(r.frame))
+					return !flagState
+				})
 			} else {
 				// Edit the specified frames OR edit the first 8 otherwise.
-				if hasFlags {
+				if hasFlags := flags.NFlag() > 0; hasFlags {
 					editFrames = filter(frames, func(_ int, r frameRecord) bool {
 						flagState, _ := flags.GetBool(strings.ToLower(r.frame))
 						return flagState
@@ -94,21 +89,12 @@ func init() {
 				}
 			}
 
-		edit:
+			scanner := bufio.NewScanner(os.Stdin)
 			for _, v := range editFrames {
-				scanner := bufio.NewScanner(os.Stdin)
-
 				switch v.frame {
 				case "APIC":
-					for {
-						fmt.Printf("%v: change? (Y/n) ", v.String())
-						input, _ := scanInputLine(scanner)
-						if input == "n" {
-							continue edit
-						}
-						if input == "Y" {
-							break
-						}
+					if yes := confirmEdit(scanner, v.String()); !yes {
+						continue
 					}
 
 					for {
@@ -151,15 +137,8 @@ func init() {
 						break
 					}
 				case "USLT":
-					for {
-						fmt.Printf("%v: change? (Y/n) ", v.String())
-						input, _ := scanInputLine(scanner)
-						if input == "n" {
-							continue edit
-						}
-						if input == "Y" {
-							break
-						}
+					if yes := confirmEdit(scanner, v.String()); !yes {
+						continue
 					}
 
 					var iso6392code string
@@ -169,7 +148,11 @@ func init() {
 								"\tSee https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\n" +
 								"\tCode: ",
 						)
-						if iso6392code, _ = scanInputLine(scanner); len(iso6392code) == 3 {
+						if iso6392code, err = scanInputLine(scanner); err != nil {
+							log.Println(err)
+							continue
+						}
+						if len(iso6392code) == 3 {
 							break
 						}
 					}
