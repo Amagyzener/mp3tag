@@ -16,10 +16,15 @@ import (
 )
 
 func init() {
+	const (
+		v1Flag = "v1"
+		v2Flag = "v2"
+	)
+
 	var resetCmd = &cobra.Command{
 		Use:     "reset PATH",
-		Short:   "Reset tags (ID3v1 & ID3v2)",
-		Long:    `Reset tags (ID3v1 & ID3v2)`,
+		Short:   "Reset ID3v1 & ID3v2 tags",
+		Long:    `Reset ID3v1 & ID3v2 tags`,
 		Args:    cobra.ExactArgs(1),
 		Example: "mp3tag reset path/to/file.mp3",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -29,53 +34,49 @@ func init() {
 			}
 
 			var (
-				flags          = cmd.Flags()
-				hasFlags       = flags.NFlag() > 0
-				v1Flag, v2Flag = true, true
+				flags                = cmd.Flags()
+				hasFlags             = flags.NFlag() > 0
+				hasV1Flag, hasV2Flag = true, true
 			)
 			if hasFlags {
-				v1Flag, _ = flags.GetBool("v1")
-				v2Flag, _ = flags.GetBool("v2")
+				hasV1Flag, _ = flags.GetBool(v1Flag)
+				hasV2Flag, _ = flags.GetBool(v2Flag)
 			}
 
-			var pathError *os.PathError // @TODO: remove this line in Golang 1.26+
-
 			// Reset v1.
-			if v1Flag {
+			if hasV1Flag {
 				var tagV1, err = id3v1.Open(args[0], id3v1.Options{Parse: false})
-				// @TODO: use `errors.AsType` in Golang 1.26+
-				if errors.As(err, &pathError) {
+				if err, ok := errors.AsType[*os.PathError](err); !ok {
 					log.Fatal(err)
 				}
 
 				if err := tagV1.SaveTo(args[0]); err != nil {
-					log.Fatalf("ID3v1 save: %v", err)
+					log.Fatalln("ID3v1 save error:", err)
 				}
+
+				log.Println("Reset ID3v1 successfully to:", args[0])
 			}
 
 			// Reset v2.
-			if v2Flag {
+			if hasV2Flag {
 				var tagV2, err = id3v2.Open(args[0], id3v2.Options{Parse: false})
-				// @TODO: use `errors.AsType` in Golang 1.26+
-				if errors.As(err, &pathError) {
+				if err, ok := errors.AsType[*os.PathError](err); !ok {
 					log.Fatal(err)
 				}
 				defer tagV2.Close()
 
 				if err := tagV2.Save(); err != nil {
-					log.Fatalf("ID3v2 save: %v", err)
+					log.Fatalln("ID3v2 save error:", err)
 				}
-			}
 
-			if v1Flag || v2Flag {
-				log.Printf("Reset successfully to: %v", args[0])
+				log.Println("Reset ID3v2 successfully to:", args[0])
 			}
 		},
 	}
 
 	var flagSet = resetCmd.Flags()
-	flagSet.Bool("v1", false, "reset ID3v1 tag")
-	flagSet.Bool("v2", false, "reset ID3v2 tag")
+	flagSet.Bool(v1Flag, false, "reset ID3v1 tag")
+	flagSet.Bool(v2Flag, false, "reset ID3v2 tag")
 
 	rootCmd.AddCommand(resetCmd)
 }

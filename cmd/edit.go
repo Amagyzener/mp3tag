@@ -7,6 +7,7 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"iter"
 	"log"
@@ -20,7 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const editFrameMsg = "%v: type any text to change, \"_\" to delete, or empty string to leave unchanged\n\tCurrent: %q\n\tNew: "
+const deletionInputToken = "_"
+const editFrameMsg = "%v: type any text to change, \"_\" to delete, or empty string to leave unchanged."
 
 func init() {
 	var frames = []frameRecord{
@@ -93,16 +95,24 @@ func init() {
 			for _, v := range editFrames {
 				switch v.frame {
 				case "APIC":
-					if yes := confirmEdit(scanner, v.String()); !yes {
-						continue
-					}
-
 					for {
-						fmt.Print("\tType path/to/file.{png|jpg|jpeg}: ")
+						fmt.Printf(editFrameMsg, v.String())
+						fmt.Printf("\n\tPath/to/file.{png|jpg|jpeg}: ")
+
 						imagePath, err := scanInputLine(scanner)
+
+						if errors.Is(err, errInputEmpty) {
+							break // skip frame editing
+						}
+
 						if err != nil {
 							log.Println(err)
 							continue
+						}
+
+						if imagePath == deletionInputToken {
+							tag.DeleteFrames(v.frame) // remove the current pic
+							break
 						}
 
 						mimeTypes := map[string]string{
@@ -137,32 +147,24 @@ func init() {
 						break
 					}
 				case "USLT":
-					if yes := confirmEdit(scanner, v.String()); !yes {
-						continue
-					}
-
-					var iso6392code string
 					for {
-						fmt.Print(
-							"\tType lyrics language according to ISO-639-2, e. g. \"eng\", \"hun\", \"rus\", \"ukr\"\n" +
-								"\tSee https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes\n" +
-								"\tCode: ",
-						)
-						if iso6392code, err = scanInputLine(scanner); err != nil {
-							log.Println(err)
-							continue
-						}
-						if len(iso6392code) == 3 {
-							break
-						}
-					}
+						fmt.Printf(editFrameMsg, v.String())
+						fmt.Printf("\n\tPath/to/file.{txt} (in UTF-8): ")
 
-					for {
-						fmt.Print("\tType path/to/file.txt (in UTF-8): ")
 						txtPath, err := scanInputLine(scanner)
+
+						if errors.Is(err, errInputEmpty) {
+							break // skip frame editing
+						}
+
 						if err != nil {
 							log.Println(err)
 							continue
+						}
+
+						if txtPath == deletionInputToken {
+							tag.DeleteFrames(v.frame) // remove the current lyrics
+							break
 						}
 
 						if ext, expect := filepath.Ext(txtPath), ".txt"; ext != expect {
@@ -174,6 +176,24 @@ func init() {
 						if err != nil {
 							log.Println(err)
 							continue
+						}
+
+						var iso6392code string
+						for {
+							fmt.Print(
+								"\n\tType lyrics language according to ISO-639-2, e. g. \"eng\", \"hun\", \"bul\", \"rus\", \"ukr\"." +
+									"\n\tSee https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes" +
+									"\n\tCode: ",
+							)
+							if iso6392code, err = scanInputLine(scanner); err != nil {
+								log.Println(err)
+								continue
+							}
+							if len(iso6392code) != 3 {
+								log.Println("language code must consist of 3 characters")
+								continue
+							}
+							break
 						}
 
 						tag.DeleteFrames(v.frame) // remove the old lyrics
@@ -196,9 +216,22 @@ func init() {
 						}
 					}
 
-					fmt.Printf(editFrameMsg, v.String(), frameText)
-					if commentary, err := scanInputLine(scanner); err == nil {
-						tag.DeleteFrames(v.frame) // remove the old comment
+					fmt.Printf(editFrameMsg, v.String())
+					fmt.Printf("\n\tCurrent: %q\n\tNew: ", frameText)
+
+					commentary, err := scanInputLine(scanner)
+
+					if errors.Is(err, errInputEmpty) {
+						break
+					}
+
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+
+					tag.DeleteFrames(v.frame) // remove the old comment
+					if commentary != deletionInputToken {
 						tag.AddCommentFrame(id3v2.CommentFrame{
 							Encoding:    tag.DefaultEncoding(),
 							Description: "",    // always empty for commentary
@@ -207,13 +240,24 @@ func init() {
 						})
 					}
 				default:
-					fmt.Printf(editFrameMsg, v.String(), tag.GetTextFrame(v.frame).Text)
-					if input, err := scanInputLine(scanner); err == nil {
-						if input == "_" {
-							tag.DeleteFrames(v.frame)
-						} else {
-							tag.AddTextFrame(v.frame, tag.DefaultEncoding(), input)
-						}
+					fmt.Printf(editFrameMsg, v.String())
+					fmt.Printf("\n\tCurrent: %q\n\tNew: ", tag.GetTextFrame(v.frame).Text)
+
+					input, err := scanInputLine(scanner)
+
+					if errors.Is(err, errInputEmpty) {
+						break
+					}
+
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+
+					if input == deletionInputToken {
+						tag.DeleteFrames(v.frame)
+					} else {
+						tag.AddTextFrame(v.frame, tag.DefaultEncoding(), input)
 					}
 				}
 			}

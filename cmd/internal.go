@@ -9,9 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"iter"
-	"log"
 	"strings"
 )
+
+var errInputEmpty = errors.New("input is empty")
 
 const invalidFileFormatMsg = "invalid file extension; expected %q"
 
@@ -32,24 +33,7 @@ func scanInputLine(s *bufio.Scanner) (string, error) {
 	if input := s.Text(); len(input) > 0 {
 		return strings.TrimSpace(input), nil
 	}
-	return "", errors.New("input is empty")
-}
-
-func confirmEdit(s *bufio.Scanner, frame string) bool {
-	for {
-		fmt.Printf("%v: change? [Y/n]: ", frame)
-		input, err := scanInputLine(s)
-		if err != nil {
-			log.Println(err)
-		}
-
-		if input == "n" {
-			return false
-		}
-		if input == "Y" {
-			return true
-		}
-	}
+	return "", errInputEmpty
 }
 
 // Returns a slice filter iterator.
