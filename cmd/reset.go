@@ -46,8 +46,8 @@ func init() {
 			// Reset v1.
 			if hasV1Flag {
 				var tagV1, err = id3v1.Open(args[0], id3v1.Options{Parse: false})
-				if err, ok := errors.AsType[*os.PathError](err); !ok {
-					log.Fatal(err)
+				if err, ok := errors.AsType[*os.PathError](err); ok {
+					log.Fatalln("file open error:", err)
 				}
 
 				if err := tagV1.SaveTo(args[0]); err != nil {
@@ -60,8 +60,8 @@ func init() {
 			// Reset v2.
 			if hasV2Flag {
 				var tagV2, err = id3v2.Open(args[0], id3v2.Options{Parse: false})
-				if err, ok := errors.AsType[*os.PathError](err); !ok {
-					log.Fatal(err)
+				if err, ok := errors.AsType[*os.PathError](err); ok {
+					log.Fatalln("file open error:", err)
 				}
 				defer tagV2.Close()
 

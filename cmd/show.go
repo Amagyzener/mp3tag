@@ -30,7 +30,7 @@ func init() {
 			// ID3v1 tag.
 			tagV1, err := id3v1.Open(args[0], id3v1.Options{Parse: true})
 			if err != nil {
-				log.Fatalf("ID3v1: %v", err)
+				log.Fatalln("file open error (ID3v1):", err)
 			}
 
 			fmt.Println("[ID3v1]")
@@ -39,11 +39,11 @@ func init() {
 			// ID3v2.3 tag.
 			tagV2, err := id3v2.Open(args[0], id3v2.Options{Parse: true})
 			if err != nil {
-				log.Fatalf("ID3v2: %v", err)
+				log.Fatalln("file open error (ID3v2):", err)
 			}
 			defer tagV2.Close()
 
-			fmt.Printf("[ID3v2] VERSION %v\n", tagV2.Version())
+			fmt.Println("[ID3v2] VERSION", tagV2.Version())
 			fmt.Println(tagV2)
 		},
 	}

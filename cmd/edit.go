@@ -58,7 +58,7 @@ func init() {
 
 			tag, err := id3v2.Open(args[0], id3v2.Options{Parse: true})
 			if err != nil {
-				log.Fatalf("ID3v2: %v", err)
+				log.Fatalln("file open error:", err)
 			}
 			defer tag.Close()
 
@@ -97,7 +97,7 @@ func init() {
 				case "APIC":
 					for {
 						fmt.Printf(editFrameMsg, v.String())
-						fmt.Printf("\n\tPath/to/file.{png|jpg|jpeg}: ")
+						fmt.Print("\n\tPath/to/file.{png|jpg|jpeg}: ")
 
 						imagePath, err := scanInputLine(scanner)
 
@@ -149,7 +149,7 @@ func init() {
 				case "USLT":
 					for {
 						fmt.Printf(editFrameMsg, v.String())
-						fmt.Printf("\n\tPath/to/file.{txt} (in UTF-8): ")
+						fmt.Print("\n\tPath/to/file.{txt} (in UTF-8): ")
 
 						txtPath, err := scanInputLine(scanner)
 
@@ -268,7 +268,7 @@ func init() {
 			if err := tag.Save(); err != nil {
 				log.Fatal(err)
 			}
-			log.Printf("Saved successfully to: %q", args[0])
+			log.Println("Saved successfully to:", args[0])
 		},
 	}
 
